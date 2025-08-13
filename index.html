@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple To‑Do</title>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #12141a;
+      --muted: #a0a7b4;
+      --text: #e8ecf1;
+      --accent: #6ee7b7;
+      --danger: #fca5a5;
+      --ring: rgba(110, 231, 183, 0.35);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f7fb; --panel: #ffffff; --muted: #5b6472; --text: #0c1116; --accent: #0ea5e9; --danger: #ef4444; --ring: rgba(14,165,233,.25);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% 0%, rgba(110, 231, 183, 0.12), transparent 45%),
+                  radial-gradient(1000px 600px at 100% 0%, rgba(14, 165, 233, 0.12), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      display: grid; place-items: center;
+      padding: 24px;
+    }
+    .app {
+      width: 100%; max-width: 720px; background: var(--panel);
+      border-radius: 18px; box-shadow: 0 10px 35px rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    header { padding: 20px 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    header h1 { font-size: 18px; margin: 0; letter-spacing: .4px; }
+    header .streak { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+    .input-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 18px 18px 8px; }
+    .input-row input[type="text"] {
+      padding: 14px 14px; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; outline: none;
+      background: transparent; color: var(--text); font-size: 15px;
+    }
+    .input-row input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+    .input-row button {
+      padding: 12px 16px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; background: var(--accent);
+      color: #06251b;
+    }
+
+    .controls { display: flex; align-items: center; gap: 8px; padding: 8px 18px 16px; color: var(--muted); font-size: 14px; }
+    .filters { display: flex; gap: 8px; }
+    .filters button {
+      border: 1px solid rgba(255,255,255,0.10); background: transparent; color: var(--muted);
+      padding: 8px 10px; border-radius: 10px; cursor: pointer; font-size: 13px;
+    }
+    .filters button[aria-pressed="true"] { color: var(--text); border-color: var(--accent); box-shadow: 0 0 0 2px var(--ring); }
+    .controls .clear { margin-left: auto; color: var(--danger); background: transparent; border: 1px solid rgba(255,255,255,0.10); padding: 8px 10px; border-radius: 10px; cursor: pointer; font-size: 13px; }
+
+    ul#list { list-style: none; margin: 0; padding: 0 10px 14px; }
+    li.todo { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px; margin: 6px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
+    li.todo input[type="checkbox"] { width: 18px; height: 18px; }
+    .todo label { user-select: none; }
+    .todo .text { padding: 10px 12px; border-radius: 10px; transition: background .15s; }
+    .todo.done .text { text-decoration: line-through; color: var(--muted); }
+
+    .todo button.icon {
+      border: none; background: transparent; cursor: pointer; font-size: 0; line-height: 0; padding: 8px; border-radius: 10px; color: var(--muted);
+    }
+    .todo button.icon:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+
+    .empty { text-align: center; color: var(--muted); padding: 28px; }
+    footer { padding: 10px 18px 18px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <main class="app" role="application" aria-label="Simple To‑Do App">
+    <header>
+      <h1>Simple To‑Do</h1>
+      <div class="streak" id="streak"></div>
+    </header>
+
+    <section class="input-row" aria-label="Add a new task">
+      <input id="todo-input" type="text" placeholder="What do you want to do? (Press Enter)" autocomplete="off" aria-label="New task" />
+      <button id="add-btn" aria-label="Add task">Add</button>
+    </section>
+
+    <section class="controls" aria-label="Filters and actions">
+      <div class="filters" role="tablist" aria-label="Filter tasks">
+        <button class="filter" data-filter="all" aria-pressed="true">All</button>
+        <button class="filter" data-filter="active" aria-pressed="false">Active</button>
+        <button class="filter" data-filter="completed" aria-pressed="false">Completed</button>
+      </div>
+      <button class="clear" id="clear-completed">Clear completed</button>
+    </section>
+
+    <ul id="list" aria-live="polite"></ul>
+
+    <div class="empty" id="empty">No tasks yet. Add your first one ✨</div>
+
+    <footer>
+      <span id="count">0 items</span>
+      <span>Made with <span aria-hidden>❤</span> HTML/CSS/JS</span>
+    </footer>
+  </main>
+
+  <script>
+    // ---- Storage helpers ----
+    const KEY = 'todos-v1';
+    const STREAK_KEY = 'todos-streak';
+
+    /** @type {{id:string,text:string,done:boolean,created:number}[]} */
+    let state = [];
+    let filter = 'all';
+
+    const $ = (q, el = document) => el.querySelector(q);
+    const $$ = (q, el = document) => [...el.querySelectorAll(q)];
+
+    function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+    function load() {
+      try { state = JSON.parse(localStorage.getItem(KEY)) || []; } catch { state = []; }
+      render();
+      updateStreak();
+    }
+
+    function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+    // ---- Streak (counts active days you added/edited tasks) ----
+    function updateStreak(didAction = false) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      let data = { last: today.getTime(), streak: 0 };
+      try { data = JSON.parse(localStorage.getItem(STREAK_KEY)) || data; } catch {}
+      const last = new Date(data.last); last.setHours(0,0,0,0);
+
+      if (didAction) {
+        const diffDays = Math.floor((today - last) / 86400000);
+        data.streak = diffDays === 1 ? (data.streak + 1) : (diffDays > 1 ? 1 : (data.streak || 1));
+        data.last = today.getTime();
+        localStorage.setItem(STREAK_KEY, JSON.stringify(data));
+      }
+      const s = JSON.parse(localStorage.getItem(STREAK_KEY) || '{}');
+      $('#streak').textContent = s.streak ? `🔥 Streak: ${s.streak} day${s.streak>1?'s':''}` : '';
+    }
+
+    // ---- Rendering ----
+    function render() {
+      const list = $('#list');
+      list.innerHTML = '';
+      const filtered = state.filter(t => filter === 'all' || (filter === 'active' ? !t.done : t.done));
+      const empty = filtered.length === 0;
+      $('#empty').style.display = empty ? 'block' : 'none';
+
+      for (const t of filtered) {
+        const li = document.createElement('li');
+        li.className = 'todo' + (t.done ? ' done' : '');
+        li.dataset.id = t.id;
+        li.innerHTML = `
+          <input type="checkbox" ${t.done ? 'checked' : ''} aria-label="Toggle done">
+          <div class="text" role="textbox" tabindex="0" aria-label="Task text" title="Double‑click to edit">${escapeHTML(t.text)}</div>
+          <button class="icon" aria-label="Delete task" title="Delete">🗑️</button>
+        `;
+        list.appendChild(li);
+      }
+      $('#count').textContent = `${state.length} item${state.length !== 1 ? 's' : ''}`;
+      $$('.filter').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
+      save();
+    }
+
+    function escapeHTML(str) { return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m])); }
+
+    // ---- Actions ----
+    function addTask(text) {
+      const trimmed = (text || '').trim();
+      if (!trimmed) return;
+      state.unshift({ id: uid(), text: trimmed, done: false, created: Date.now() });
+      render();
+      updateStreak(true);
+    }
+
+    function toggleTask(id) {
+      const t = state.find(x => x.id === id); if (!t) return; t.done = !t.done; render();
+    }
+
+    function deleteTask(id) { state = state.filter(t => t.id !== id); render(); }
+
+    function clearCompleted() { state = state.filter(t => !t.done); render(); }
+
+    function startInlineEdit(div) {
+      const li = div.closest('li.todo'); if (!li) return;
+      const id = li.dataset.id; const t = state.find(x => x.id === id); if (!t) return;
+      const input = document.createElement('input');
+      input.type = 'text'; input.value = t.text; input.className = 'text'; input.setAttribute('aria-label','Edit task');
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { t.text = input.value.trim() || t.text; render(); updateStreak(true); }
+        if (e.key === 'Escape') { render(); }
+      });
+      input.addEventListener('blur', () => { t.text = input.value.trim() || t.text; render(); updateStreak(true); });
+      li.replaceChild(input, div); input.focus(); input.select();
+    }
+
+    // ---- Events ----
+    $('#add-btn').addEventListener('click', () => addTask($('#todo-input').value));
+    $('#todo-input').addEventListener('keydown', e => { if (e.key === 'Enter') { addTask(e.target.value); e.target.value=''; }});
+
+    $('#list').addEventListener('click', e => {
+      const li = e.target.closest('li.todo'); if (!li) return;
+      const id = li.dataset.id;
+      if (e.target.matches('input[type="checkbox"]')) toggleTask(id);
+      if (e.target.matches('button.icon')) deleteTask(id);
+    });
+
+    $('#list').addEventListener('dblclick', e => { const div = e.target.closest('.text'); if (div) startInlineEdit(div); });
+
+    $$('.filter').forEach(btn => btn.addEventListener('click', () => { filter = btn.dataset.filter; render(); }));
+    $('#clear-completed').addEventListener('click', clearCompleted);
+
+    // Keyboard: Enter to add, F to focus input, Delete to remove focused item
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); $('#todo-input').focus(); }
+      if (e.key === 'Delete') { const li = document.activeElement?.closest?.('li.todo'); if (li) deleteTask(li.dataset.id); }
+    });
+
+    load();
+  </script>
+</body>
+</html>
