@@ -219,8 +219,6 @@
 
     $$('.filter').forEach(btn => btn.addEventListener('click', () => { filter = btn.dataset.filter; render(); }));
     $('#clear-completed').addEventListener('click', clearCompleted);
-
-    // Keyboard: Enter to add, F to focus input, Delete to remove focused item
     document.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); $('#todo-input').focus(); }
       if (e.key === 'Delete') { const li = document.activeElement?.closest?.('li.todo'); if (li) deleteTask(li.dataset.id); }
@@ -230,3 +228,4 @@
   </script>
 </body>
 </html>
+
