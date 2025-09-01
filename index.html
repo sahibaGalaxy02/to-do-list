@@ -145,7 +145,7 @@
         localStorage.setItem(STREAK_KEY, JSON.stringify(data));
       }
       const s = JSON.parse(localStorage.getItem(STREAK_KEY) || '{}');
-      $('#streak').textContent = s.streak ? `🔥 Streak: ${s.streak} day${s.streak>1?'s':''}` : '';
+      $('#streak').textContent = s.streak ? `Streak: ${s.streak} day${s.streak>1?'s':''}` : '';
     }
 
     // ---- Rendering ----
@@ -228,4 +228,5 @@
   </script>
 </body>
 </html>
+
 
