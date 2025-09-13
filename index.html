@@ -131,7 +131,8 @@
 
     function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
 
-    // ---- Streak (counts active days you added/edited tasks) ----
+    // ---- Streak (counts active days you added/edited tasks)
+    
     function updateStreak(didAction = false) {
       const today = new Date(); today.setHours(0,0,0,0);
       let data = { last: today.getTime(), streak: 0 };
@@ -228,6 +229,7 @@
   </script>
 </body>
 </html>
+
 
 
 
